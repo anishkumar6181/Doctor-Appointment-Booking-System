@@ -2,10 +2,13 @@ import React, { useContext, useEffect, useState } from "react";
 import { AppContext } from "../context/AppContext";
 import { toast } from "react-toastify";
 import axios from "axios";
+import Chat from "../components/Chat";
 
 const MyAppointments = () => {
   const { backendUrl, token, getDoctorsData } = useContext(AppContext);
   const [appointments, setAppointments] = useState([]);
+  const [paidAppointmentId, setPaidAppointmentId] = useState(null);
+  const [activeChat, setActiveChat] = useState(null);
   const months = [
     "",
     "Jan",
@@ -65,58 +68,28 @@ const MyAppointments = () => {
       toast.error(error.message);
     }
   };
+
   // const appointmentRazorpay = async (appointmentId) => {
-  //   console.log('Pay Online button clicked', appointmentId);
-  //   try{
-  //     const { data } = await axios.post(backendUrl + '/api/user/payment-razorpay', { appointmentId }, { headers: { token } })
-  //     console.log('API response:', data);
+  //   console.log("Pay Online button clicked", appointmentId);
+  //   try {
+  //     const { data } = await axios.post(
+  //       backendUrl + "/api/user/payment-razorpay",
+  //       { appointmentId },
+  //       { headers: { token } }
+  //     );
+  //     console.log("API response:", data);
 
-  //     if(data.success){
-  //       console.log(data.order)
-  //     }else{
-  //       console.log('API error:', data.message);
-  //       toast.error(data.message)
+  //     if (data.success) {
+  //       console.log("Order data:", data.order);
+  //     } else {
+  //       console.log("API error:", data.message || "Unknown error"); // Handle undefined message
+  //       toast.error(data.message || "Unknown error");
   //     }
-  //   }catch (error) {
-  //     console.log(error)
-  //     toast.error(error.message)
+  //   } catch (error) {
+  //     console.log("Request error:", error);
+  //     toast.error(error.message);
   //   }
-  // }
-
-  const [paidAppointmentId, setPaidAppointmentId] = useState(null);
-
-  const handlePayment = async (appointmentId) => {
-    // Add your actual payment processing logic here
-    // For demonstration, we'll just show a success message
-    setPaidAppointmentId(appointmentId);
-
-    // Hide the message after 3 seconds
-    setTimeout(() => {
-      setPaidAppointmentId(null);
-    }, 3000);
-  };
-
-  const appointmentRazorpay = async (appointmentId) => {
-    console.log("Pay Online button clicked", appointmentId);
-    try {
-      const { data } = await axios.post(
-        backendUrl + "/api/user/payment-razorpay",
-        { appointmentId },
-        { headers: { token } }
-      );
-      console.log("API response:", data);
-
-      if (data.success) {
-        console.log("Order data:", data.order);
-      } else {
-        console.log("API error:", data.message || "Unknown error"); // Handle undefined message
-        toast.error(data.message || "Unknown error");
-      }
-    } catch (error) {
-      console.log("Request error:", error);
-      toast.error(error.message);
-    }
-  };
+  // };
   useEffect(() => {
     if (token) {
       getUserAppointments();
@@ -196,12 +169,48 @@ const MyAppointments = () => {
                   Appointment Completed
                 </button>
               )}
+              {/* // Add to each appointment */}
+              {!item.cancelled && !item.isCompleted && (
+                <button
+                  onClick={() => setActiveChat(item)}
+                  className="text-sm text-stone-500 sm:min-w-48 py-2 border rounded hover:bg-blue-500 hover:text-white transition-all duration-300"
+                >
+                  Chat with Doctor
+                </button>
+              )}
             </div>
           </div>
         ))}
       </div>
+      {/* Chat Modal */}
+      {activeChat && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">
+                Chat with Dr. {activeChat.docData.name}
+              </h3>
+              <button
+                onClick={() => setActiveChat(null)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <Chat
+              appointmentId={activeChat._id}
+              doctorId={activeChat.docData._id}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default MyAppointments;
+//     </div>
+//   );
+// };
+
+// export default MyAppointments;
