@@ -20,8 +20,8 @@ connectCloudinary();
 
 // Use this array for allowed origins
 const allowedOrigins = [
-  'http://localhost:5173', 
-  'http://localhost:5174'
+  'https://prescripto-frontend-o7v2.onrender.com', 
+  'https://prescripto-admin-jhkf.onrender.com'
 ];
 
 // middlewares
@@ -50,8 +50,8 @@ const io = new SocketIOServer(server, {
       if (!origin) return callback(null, true);
       if (
         allowedOrigins.includes(origin) || 
-        origin.includes("localhost:5173") || 
-        origin.includes("localhost:5174")
+        origin.includes("prescripto-frontend-o7v2.onrender.com") || 
+        origin.includes("prescripto-admin-jhkf.onrender.com")
       ) {
         callback(null, true);
       } else {
