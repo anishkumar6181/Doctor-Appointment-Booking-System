@@ -43,12 +43,14 @@ Doctor Appointment website quite useful website. In this project it consists of 
    MONGODB_URI=mongodb+srv://<username>:<password>@clusterName.xxxxxxx.mongodb.net/doctor-appointment
   ### 3️⃣ Download npm packages and Vite tool:
    1. For the backend side follow these steps: ⬇️
+      
       Run *npm install* in the project directory to install the required dependencies.
       
       Run *npm run server* to get the project started.
       
       Open http://localhost:4000 in your web browser to view the app.
-   3. For the frontend side follow these steps: ⬇️
+   2. For the frontend side follow these steps: ⬇️
+      
       Run *cd doctor-appointment-booking-system/frontend/* should go folder field.
       
       Run *npm install* in the project directory to install the required dependencies.
@@ -56,7 +58,7 @@ Doctor Appointment website quite useful website. In this project it consists of 
       Run *npm run dev* to get the project started.
       
       Open http://localhost:5173 in your web browser to view the app.
-   4. For the admin side follow these steps: ⬇️
+   3. For the admin side follow these steps: ⬇️
       
       Run *cd doctor-appointment-website/admin/* should go folder field.
       
