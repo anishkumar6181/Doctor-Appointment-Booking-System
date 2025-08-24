@@ -6,6 +6,7 @@ import userModel from '../models/userModel.js'
 import doctorModel from '../models/doctorModel.js'
 import appointmentModel from '../models/appointmentModel.js'
 import razorpay from 'razorpay'
+import stripe from 'stripe'
 
 // API to register user
 const registerUser = async (req, res) => {
@@ -230,83 +231,72 @@ const cancelAppointment = async (req, res) => {
 
 }
 
-const razorpayInstance = new razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET
-})
-// API to make payment using razorpay
-// const paymentRazorpay = async (req, res) => {
+// const razorpayInstance = new razorpay({
+//   key_id: process.env.RAZORPAY_KEY_ID,
+//   key_secret: process.env.RAZORPAY_KEY_SECRET
+// })
 
-//   try{
-//     const { appointmentId } = req.body
-//     const appointmentData = await appointmentModel.findById(appointmentId)
+const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY)
 
-//     if (!appointmentData || appointmentData.cancelled) {
-//       return res.json({ success: false, message: 'Invalid Appointment' })
-//     }
-//     //  creating options for razorpay payment
-//     const options = {
-//       amount: appointmentData.amount * 100,
-//       currency: process.env.RAZORPAY_CURRENCY,
-//       receipt: appointmentId,
-//     }
-//     // creating order
-//     const order = await razorpayInstance.orders.create(options) 
-//     res.json({ success: true, order })
+const paymentStripe = async (req, res) => {
+    try {
 
-//   }catch(error){
-//     console.log(error)
-//     res.json({ success: false, message: error.message })
-//   }
-   
-// }
+        const { appointmentId } = req.body
+        const { origin } = req.headers
 
+        const appointmentData = await appointmentModel.findById(appointmentId)
 
-const paymentRazorpay = async (req, res) => {
-  try {
-    const { appointmentId } = req.body
-    const appointmentData = await appointmentModel.findById(appointmentId)
+        if (!appointmentData || appointmentData.cancelled) {
+            return res.json({ success: false, message: 'Appointment Cancelled or not found' })
+        }
 
-    if (!appointmentData || appointmentData.cancelled) {
-      return res.json({ success: false, message: 'Invalid Appointment' })
+        const currency = process.env.CURRENCY.toLocaleLowerCase() || "usd"
+
+        const line_items = [{
+            price_data: {
+                currency,
+                product_data: {
+                    name: "Appointment Fees"
+                },
+                unit_amount: appointmentData.amount * 100
+            },
+            quantity: 1
+        }]
+
+        const session = await stripeInstance.checkout.sessions.create({
+            success_url: `${origin}/verify?success=true&appointmentId=${appointmentData._id}`,
+            cancel_url: `${origin}/verify?success=false&appointmentId=${appointmentData._id}`,
+            line_items: line_items,
+            mode: 'payment',
+        })
+
+        res.json({ success: true, session_url: session.url });
+
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
     }
-
-    // creating options for razorpay payment
-    const options = {
-      amount: appointmentData.amount * 100,
-      currency: process.env.RAZORPAY_CURRENCY,
-      receipt: appointmentId,
-    }
-
-    // creating order
-    const order = await razorpayInstance.orders.create(options)
-    res.json({ success: true, order })
-  } catch (error) {
-    console.log(error)
-    res.json({ success: false, message: error.message })
-  }
 }
 
-// const paymentRazorpay = async (req, res) => {
-//   try {
-//     const { appointmentId } = req.body
-//     const appointmentData = await appointmentModel.findById(appointmentId)
+const verifyStripe = async (req, res) => {
+    try {
 
-//     if (!appointmentData || appointmentData.cancelled) {
-//       return res.json({ success: false, message: 'Invalid Appointment' })
-//     }
+        const { appointmentId, success } = req.body
 
-//     const options = {
-//       amount: appointmentData.amount * 100,
-//       currency: process.env.RAZORPAY_CURRENCY,
-//       receipt: appointmentId,
-//     }
+        if (success === "true") {
+            await appointmentModel.findByIdAndUpdate(appointmentId, { payment: true })
+            return res.json({ success: true, message: 'Payment Successful' })
+        }
 
-//     const order = await razorpayInstance.orders.create(options)
-//     res.json({ success: true, order })
-//   } catch (error) {
-//     res.json({ success: false, message: error.message })
-//   }
-// }
+        res.json({ success: false, message: 'Payment Failed' })
 
-export { registerUser, loginUser, getProfile, updateProfile, bookAppointment, listAppointment, cancelAppointment, paymentRazorpay}
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+
+}
+
+
+
+export { registerUser, loginUser, getProfile, updateProfile, bookAppointment, listAppointment, cancelAppointment, verifyStripe, paymentStripe}
